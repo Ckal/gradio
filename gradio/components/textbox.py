@@ -103,7 +103,7 @@ class Textbox(FormComponent):
         """
         Parameters:
             value: text to show in textbox. If a function is provided, the function will be called each time the app loads to set the initial value of this component.
-            type: The type of textbox. One of: 'text' (which allows users to enter any text), 'password' (which masks text entered by the user), 'email' (which suggests email input to the browser). For "password" and "email" types, `lines` must be 1 and `max_lines` must be None or 1.
+            type: The type of textbox. One of: 'text' (which allows users to enter any text), 'password' (which masks text entered by the user), 'email' (which suggests email input to the browser). For "password" and "email" types, `lines` must be 1 and `max_lines` must be None or 1. Note that the 'password' type only masks the input visually; do not pass a secret as the initial `value` of a password textbox, as the `value` is serialized into the app config and sent to every client in cleartext (a warning is emitted if you do).
             lines: minimum number of line rows to provide in textarea.
             max_lines: maximum number of line rows to provide in textarea. Must be at least `lines`. If not provided, the maximum number of lines is max(lines, 20) for "text" type, and 1 for "password" and "email" types.
             placeholder: placeholder hint to provide behind textarea.
@@ -145,6 +145,18 @@ class Textbox(FormComponent):
                     "The `max_lines` parameter must be None or 1 for `type` of 'password' or 'email'. Setting `max_lines` to 1."
                 )
                 max_lines = 1
+        if type == "password" and not callable(value) and value not in (None, ""):
+            warnings.warn(
+                "A non-empty `value` was passed to a `gr.Textbox` with "
+                "`type='password'`. The `password` type only masks the input "
+                "visually; the initial `value` is still serialized into the app "
+                "configuration and sent to every client in cleartext (visible via "
+                "view-source or the network tab). Do not pre-fill secrets such as "
+                "API keys or tokens into a password field. Leave `value` empty and "
+                "collect the secret from the user, or keep secrets server-side via "
+                "environment variables / `gr.Blocks(...).load()` instead.",
+                stacklevel=2,
+            )
         self.lines = lines
         self.max_lines = max_lines
         self.placeholder = placeholder

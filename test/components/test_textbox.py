@@ -88,3 +88,22 @@ class TestTextbox:
             ValueError, match='`type` must be one of "text", "password", or "email".'
         ):
             gr.Textbox(type="boo")  # type: ignore
+
+    def test_password_with_value_warns(self):
+        with pytest.warns(UserWarning, match="type='password'"):
+            gr.Textbox(value="hf_secret_token", type="password")
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"value": "", "type": "password"},
+            {"value": None, "type": "password"},
+            {"type": "password"},
+            {"value": lambda: "secret", "type": "password"},
+            {"value": "hf_secret_token", "type": "text"},
+            {"value": "a@b.com", "type": "email"},
+        ],
+    )
+    def test_no_password_warning_for_safe_cases(self, recwarn, kwargs):
+        gr.Textbox(**kwargs)
+        assert not [w for w in recwarn if "type='password'" in str(w.message)]
